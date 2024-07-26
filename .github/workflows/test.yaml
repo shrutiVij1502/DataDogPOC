@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - '**/dashboard.json'
-      # - '**/monitor.json'
   workflow_dispatch:
 
 jobs:
@@ -18,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.2'
+          python-version: '3.x'
 
       - name: Install dependencies
         run: |
@@ -30,7 +29,7 @@ jobs:
           for client_dir in $(find . -maxdepth 1 -type d -name 'client*'); do
             if [ -f "$client_dir/dashboard.json" ]; then
               echo "Processing $client_dir/dashboard.json"
-              python <<EOF
+              python - <<EOF
 from datadog import initialize, api
 import json
 import os
@@ -45,17 +44,10 @@ options = {
 initialize(**options)
 
 # Create Dashboard
-with open('$client_dir/dashboard.json', 'r') as file:
+with open('${client_dir}/dashboard.json', 'r') as file:
     dashboard_data = json.load(file)
 response = api.Dashboard.create(**dashboard_data)
-print("Dashboard created for $client_dir:", response)
-
-# # Create Monitor
-# if os.path.isfile('$client_dir/monitor.json'):
-#     with open('$client_dir/monitor.json', 'r') as file:
-#         monitor_data = json.load(file)
-#     response = api.Monitor.create(**monitor_data)
-#     print("Monitor created for $client_dir:", response)
+print("Dashboard created for ${client_dir}:", response)
 EOF
             fi
           done
