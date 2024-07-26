@@ -10,6 +10,10 @@ jobs:
   create-resources:
     runs-on: ubuntu-latest
 
+    env:
+      DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+      DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -29,28 +33,28 @@ jobs:
           for client_dir in $(find . -maxdepth 1 -type d -name 'client*'); do
             if [ -f "$client_dir/dashboard.json" ]; then
               echo "Processing $client_dir/dashboard.json"
-              python - <<EOF
-from datadog import initialize, api
-import json
-import os
+              python -c "
+                import os
+                import json
+                from datadog import initialize, api
 
-# Initialize Datadog
-options = {
-    'api_key': os.getenv('DATADOG_API_KEY'),
-    'app_key': os.getenv('DATADOG_APP_KEY'),
-    'api_host': 'https://api.us5.datadoghq.com'
-}
+                # Initialize Datadog
+                options = {
+                    'api_key': os.getenv('DATADOG_API_KEY'),
+                    'app_key': os.getenv('DATADOG_APP_KEY'),
+                    'api_host': 'https://api.us5.datadoghq.com'
+                }
 
-initialize(**options)
+                initialize(**options)
 
-# Create Dashboard
-with open('${client_dir}/dashboard.json', 'r') as file:
-    dashboard_data = json.load(file)
-response = api.Dashboard.create(**dashboard_data)
-print("Dashboard created for ${client_dir}:", response)
-EOF
-            fi
-          done
-        env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY }}
+                # Create Dashboard
+                client_dir = '$client_dir'
+                with open(f'{client_dir}/dashboard.json', 'r') as file:
+                    dashboard_data = json.load(file)
+                response = api.Dashboard.create(**dashboard_data)
+                print(f'Dashboard created for {client_dir}:', response)
+                "
+                            fi
+                          done
+
+ 
