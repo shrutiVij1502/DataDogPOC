@@ -28,6 +28,4 @@ jobs:
           pip install datadog
 
       - name: Run create_dashboard script
-        run: |
-          pwd
-          python dashboard.py
+        run: python dashboard.py
